@@ -7,7 +7,7 @@ export class InspectorRepository extends BaseRepository<Inspector> {
   }
 
   findByUsername(username: string): Inspector | undefined {
-    return this.db.prepare("SELECT * FROM inspectors WHERE username = ?").get(username) as Inspector | undefined;
+    return this.db.prepare("SELECT * FROM inspectors WHERE username = ? COLLATE NOCASE").get(username) as Inspector | undefined;
   }
 
   findAll(): Inspector[] {

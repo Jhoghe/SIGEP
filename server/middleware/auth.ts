@@ -12,7 +12,9 @@ export const authenticateToken = (req: any, res: Response, next: NextFunction) =
 
   jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
     if (err) {
-      console.log(`[AuthMiddleware] Token verification failed: ${err.message}. Token: ${token.substring(0, 10)}...`);
+      // Use console.log instead of console.error for expired tokens to reduce noise
+      // as it is a common occurrence and handled by the client.
+      console.log(`[AuthMiddleware] Auth failed: ${err.message}.`);
       return res.status(401).json({ 
         message: "Sessão expirada ou token inválido. Por favor, faça login novamente.",
         code: "TOKEN_EXPIRED"

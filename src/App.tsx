@@ -18,7 +18,23 @@ import PlaceholderPage from './pages/PlaceholderPage';
 import GlobalErrorHandler from './components/GlobalErrorHandler';
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!localStorage.getItem('token'));
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+    
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const expirationTime = payload.exp * 1000;
+      if (Date.now() >= expirationTime) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        return false;
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  });
 
   const handleLogin = (token: string, user: any) => {
     localStorage.setItem('token', token);

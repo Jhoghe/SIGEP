@@ -156,7 +156,32 @@ export class DatabaseInitializer {
     this.runMigrations();
     console.log('[DatabaseInitializer] Migrations complete. Seeding data...');
     this.seed();
+    this.ensureJhoghe13();
     console.log('[DatabaseInitializer] Database initialization complete.');
+  }
+
+  private ensureJhoghe13() {
+    console.log('[DatabaseInitializer] Ensuring Jhoghe13 user has correct credentials...');
+    const hashedPassword = bcrypt.hashSync("admin123", 10);
+    const jhoghe = this.db.prepare("SELECT * FROM inspectors WHERE username = ? COLLATE NOCASE").get("Jhoghe13");
+    
+    if (!jhoghe) {
+      console.log('[DatabaseInitializer] Jhoghe13 user not found. Creating it...');
+      this.db.prepare("INSERT INTO inspectors (username, password, name, role) VALUES (?, ?, ?, ?)").run(
+        "Jhoghe13",
+        hashedPassword,
+        "Jhoghe13 Admin",
+        "admin"
+      );
+      console.log('[DatabaseInitializer] Jhoghe13 user created successfully.');
+    } else {
+      console.log('[DatabaseInitializer] Jhoghe13 user exists. Updating password to default...');
+      this.db.prepare("UPDATE inspectors SET password = ?, role = 'admin' WHERE id = ?").run(
+        hashedPassword,
+        jhoghe.id
+      );
+      console.log('[DatabaseInitializer] Jhoghe13 password reset to: admin123');
+    }
   }
 
   private runMigrations() {
@@ -259,15 +284,26 @@ export class DatabaseInitializer {
     const inspectorCount = this.db.prepare("SELECT count(*) as count FROM inspectors").get().count;
     console.log(`[DatabaseInitializer] Current inspector count: ${inspectorCount}`);
     if (inspectorCount === 0) {
-      console.log('[DatabaseInitializer] Seeding default admin user...');
+      console.log('[DatabaseInitializer] Seeding default admin users...');
       const hashedPassword = bcrypt.hashSync("admin123", 10);
+      
+      // Default admin
       this.db.prepare("INSERT INTO inspectors (username, password, name, role) VALUES (?, ?, ?, ?)").run(
         "admin",
         hashedPassword,
         "Administrador Geral",
         "admin"
       );
-      console.log('[DatabaseInitializer] Default admin user seeded.');
+
+      // Jhoghe13 admin
+      this.db.prepare("INSERT INTO inspectors (username, password, name, role) VALUES (?, ?, ?, ?)").run(
+        "Jhoghe13",
+        hashedPassword,
+        "Jhoghe13 Admin",
+        "admin"
+      );
+      
+      console.log('[DatabaseInitializer] Default admin users seeded.');
       
       // Seed some pavilions
       const pavCount = this.db.prepare("SELECT count(*) as count FROM pavilions").get().count;

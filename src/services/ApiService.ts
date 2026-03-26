@@ -29,11 +29,10 @@ class ApiService {
     const isJson = contentType && contentType.includes('application/json');
 
     if (!response.ok) {
-      console.error(`[ApiService] Request failed with status ${response.status}`);
-      
-      // The global fetch interceptor in main.tsx handles 401 redirects.
-      // We just need to throw a clear error here.
-      if (response.status === 401 || response.status === 403) {
+      // Don't log 401/403 as "Request failed" errors since they are handled by the auth flow
+      if (response.status !== 401 && response.status !== 403) {
+        console.error(`[ApiService] Request failed with status ${response.status}`);
+      } else {
         console.warn(`[ApiService] Auth error ${response.status}. Session may be expired.`);
       }
 

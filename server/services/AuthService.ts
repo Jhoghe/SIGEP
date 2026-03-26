@@ -11,12 +11,26 @@ export class AuthService {
   }
 
   async login(username: string, password: string) {
+    console.log(`[AuthService] Attempting login for user: ${username}`);
     const user = this.inspectorRepo.findByUsername(username);
 
-    if (!user || !user.password || !bcrypt.compareSync(password, user.password)) {
+    if (!user) {
+      console.warn(`[AuthService] User not found: ${username}`);
       throw new Error("Usuário ou senha inválidos.");
     }
 
+    if (!user.password) {
+      console.error(`[AuthService] User ${username} has no password set.`);
+      throw new Error("Usuário ou senha inválidos.");
+    }
+
+    const isPasswordValid = bcrypt.compareSync(password, user.password);
+    if (!isPasswordValid) {
+      console.warn(`[AuthService] Invalid password for user: ${username}`);
+      throw new Error("Usuário ou senha inválidos.");
+    }
+
+    console.log(`[AuthService] Login successful for user: ${username}`);
     const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role }, 
       JWT_SECRET, 

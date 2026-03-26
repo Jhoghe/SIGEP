@@ -131,6 +131,10 @@ class PrisonServer {
 
     // System Routes
     this.app.delete("/api/system/reset", authenticateToken, isAdmin, this.resetSystem);
+    this.app.get("/api/system/export", authenticateToken, isAdmin, (req, res) => {
+      const dbPath = path.join(process.cwd(), "prison.db");
+      res.download(dbPath, "prison_backup.db");
+    });
 
     // Legacy Routes (to be refactored later if needed)
     this.setupLegacyRoutes();

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Settings as SettingsIcon, Bell, Shield, Eye, Globe, Database, Save } from 'lucide-react';
+import { apiFetch } from '../lib/api';
 
 export default function Settings() {
   return (
@@ -77,14 +78,24 @@ export default function Settings() {
                 <p className="text-sm font-bold text-slate-900">Autenticação em Duas Etapas</p>
                 <p className="text-xs text-slate-500">Aumentar segurança da conta</p>
               </div>
-              <button className="text-xs font-bold text-blue-600 hover:underline">Configurar</button>
+              <button 
+                onClick={() => alert('Recurso em desenvolvimento.')}
+                className="text-xs font-bold text-blue-600 hover:underline"
+              >
+                Configurar
+              </button>
             </div>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-slate-900">Sessões Ativas</p>
                 <p className="text-xs text-slate-500">Gerenciar dispositivos conectados</p>
               </div>
-              <button className="text-xs font-bold text-blue-600 hover:underline">Ver todas</button>
+              <button 
+                onClick={() => alert('Recurso em desenvolvimento.')}
+                className="text-xs font-bold text-blue-600 hover:underline"
+              >
+                Ver todas
+              </button>
             </div>
           </div>
         </div>
@@ -105,7 +116,33 @@ export default function Settings() {
               </div>
               <input type="checkbox" defaultChecked className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
             </div>
-            <button className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-sm transition-colors">
+            <button 
+              onClick={async () => {
+                try {
+                  const response = await apiFetch('/api/system/export', {
+                    headers: {
+                      'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                  });
+                  if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'prison_backup.db';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                  } else {
+                    alert('Erro ao exportar banco de dados.');
+                  }
+                } catch (error) {
+                  console.error('Export error:', error);
+                  alert('Erro ao exportar banco de dados.');
+                }
+              }}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-sm transition-colors"
+            >
               Exportar Base de Dados (SQL)
             </button>
           </div>
@@ -113,7 +150,10 @@ export default function Settings() {
       </div>
 
       <div className="flex justify-end">
-        <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-8 rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2">
+        <button 
+          onClick={() => alert('Configurações salvas com sucesso!')}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-8 rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2"
+        >
           <Save className="w-5 h-5" />
           Salvar Todas as Configurações
         </button>

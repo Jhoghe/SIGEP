@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Box, 
   Plus, 
@@ -47,6 +48,10 @@ interface Cell {
 }
 
 export default function Cells() {
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isAdmin = user.role === 'admin';
+
   const [pavilions, setPavilions] = useState<Pavilion[]>([]);
   const [cells, setCells] = useState<Cell[]>([]);
   const [loading, setLoading] = useState(true);
@@ -214,6 +219,31 @@ export default function Cells() {
     }
   };
 
+  const handleCellTransferClick = (cell: Cell) => {
+    if (!cell.prisoners_info || cell.current_occupancy === 0) {
+      alert('Esta cela está vazia. Não há detentos para transferir.');
+      return;
+    }
+
+    const prisoners = cell.prisoners_info.split('|');
+    if (prisoners.length === 1) {
+      const [id, name] = prisoners[0].split(':');
+      setTransferData({
+        ...transferData,
+        prisoner_id: parseInt(id),
+        prisoner_name: name,
+        origin: `Cela ${cell.number}`,
+        date: new Date().toISOString().split('T')[0],
+        destination_cell_id: '',
+        reason: 'Transferência interna entre celas'
+      });
+      setIsTransferModalOpen(true);
+    } else {
+      // Múltiplos detentos, abre detalhes para escolher um
+      openCellDetails(cell);
+    }
+  };
+
   const handleDeleteCell = async (id: number) => {
     if (!confirm('Deseja excluir esta cela?')) return;
     try {
@@ -340,22 +370,24 @@ export default function Cells() {
           <h1 className="text-2xl font-bold text-slate-900">Gestão de Celas e Pavilhões</h1>
           <p className="text-slate-500">Controle de infraestrutura e ocupação da unidade.</p>
         </div>
-        <div className="flex gap-3">
-          <button 
-            onClick={openNewPavilion}
-            className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-all"
-          >
-            <Building2 className="w-5 h-5 text-slate-400" />
-            🏢 Novo Pavilhão
-          </button>
-          <button 
-            onClick={openNewCell}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all"
-          >
-            <Plus className="w-5 h-5" />
-            ➕ Nova Cela
-          </button>
-        </div>
+        {isAdmin && (
+          <div className="flex gap-3">
+            <button 
+              onClick={openNewPavilion}
+              className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-all"
+            >
+              <Building2 className="w-5 h-5 text-slate-400" />
+              🏢 Novo Pavilhão
+            </button>
+            <button 
+              onClick={openNewCell}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all"
+            >
+              <Plus className="w-5 h-5" />
+              ➕ Nova Cela
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Stats Summary */}
@@ -487,13 +519,15 @@ export default function Cells() {
                       <LayoutGrid className="w-8 h-8" />
                     </div>
                     <div className="flex items-center gap-1">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); openEditCell(cell); }}
-                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                        title="Editar"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
+                      {isAdmin && (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); openEditCell(cell); }}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                          title="Editar"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      )}
                       <button 
                         onClick={(e) => { e.stopPropagation(); openCellDetails(cell); }}
                         className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
@@ -501,13 +535,24 @@ export default function Cells() {
                       >
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); /* Transfer logic */ }}
-                        className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
-                        title="Transferir"
-                      >
-                        <ArrowRightLeft className="w-4 h-4" />
-                      </button>
+                      {isAdmin && (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleCellTransferClick(cell); }}
+                          className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                          title="Transferir"
+                        >
+                          <ArrowRightLeft className="w-4 h-4" />
+                        </button>
+                      )}
+                      {isAdmin && (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleDeleteCell(cell.id); }}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          title="Excluir"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                   
@@ -641,18 +686,22 @@ export default function Cells() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => openEditPavilion(pav)}
-                      className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                    >
-                      <Plus className="w-4 h-4 rotate-45" />
-                    </button>
-                    <button 
-                      onClick={() => handleDeletePavilion(pav.id)}
-                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {isAdmin && (
+                      <>
+                        <button 
+                          onClick={() => openEditPavilion(pav)}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        >
+                          <Plus className="w-4 h-4 rotate-45" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeletePavilion(pav.id)}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -928,12 +977,24 @@ export default function Cells() {
                 <div className="pt-4 border-t border-slate-100">
                   <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-3">Ações Adicionais</h4>
                   <div className="grid grid-cols-2 gap-3">
-                    <button className="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-100 text-left transition-all group">
+                    <button 
+                      onClick={() => {
+                        setIsDetailsModalOpen(false);
+                        navigate('/transfers');
+                      }}
+                      className="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-100 text-left transition-all group"
+                    >
                       <Clock className="w-5 h-5 text-slate-400 mb-1 group-hover:text-blue-600 transition-colors" />
                       <p className="font-bold text-slate-900 text-xs">Histórico</p>
                       <p className="text-xs text-slate-500">Ver movimentações</p>
                     </button>
-                    <button className="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-100 text-left transition-all group">
+                    <button 
+                      onClick={() => {
+                        setIsDetailsModalOpen(false);
+                        navigate('/incidents');
+                      }}
+                      className="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-100 text-left transition-all group"
+                    >
                       <ShieldAlert className="w-5 h-5 text-slate-400 mb-1 group-hover:text-red-600 transition-colors" />
                       <p className="font-bold text-slate-900 text-xs">Ocorrências</p>
                       <p className="text-xs text-slate-500">Registrar incidente</p>
