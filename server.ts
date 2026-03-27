@@ -448,6 +448,17 @@ class PrisonServer {
       }
     });
 
+    this.app.put("/api/crimes/:id", authenticateToken, (req, res) => {
+      const { prisoner_id, article, description, crime_date, sentence_years, sentence_months, type, severity } = req.body;
+      try {
+        db.prepare("UPDATE crimes SET prisoner_id = ?, article = ?, description = ?, crime_date = ?, sentence_years = ?, sentence_months = ?, type = ?, severity = ? WHERE id = ?")
+          .run(prisoner_id, article, description, crime_date, sentence_years, sentence_months, type, severity, req.params.id);
+        res.json({ message: "Crime atualizado com sucesso." });
+      } catch (e) {
+        res.status(500).json({ message: "Erro ao atualizar crime." });
+      }
+    });
+
     this.app.delete("/api/crimes/:id", authenticateToken, (req, res) => {
       try {
         db.prepare("DELETE FROM crimes WHERE id = ?").run(req.params.id);

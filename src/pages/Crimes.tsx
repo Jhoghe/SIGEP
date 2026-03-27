@@ -71,6 +71,7 @@ export default function Crimes() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedCrime, setSelectedCrime] = useState<Crime | null>(null);
+  const [editingCrime, setEditingCrime] = useState<Crime | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSeverity, setFilterSeverity] = useState('');
   const [filterType, setFilterType] = useState('');
@@ -174,8 +175,11 @@ export default function Crimes() {
         });
       }
 
-      const response = await apiFetch('/api/crimes', {
-        method: 'POST',
+      const method = editingCrime ? 'PUT' : 'POST';
+      const url = editingCrime ? `/api/crimes/${editingCrime.id}` : '/api/crimes';
+
+      const response = await apiFetch(url, {
+        method,
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -185,6 +189,7 @@ export default function Crimes() {
 
       if (response.ok) {
         setIsModalOpen(false);
+        setEditingCrime(null);
         setSelectedCommonCrime('');
         setFormData({
           prisoner_id: '',
@@ -490,7 +495,19 @@ export default function Crimes() {
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
-                            // Edit logic could go here
+                            setEditingCrime(crime);
+                            setFormData({
+                              prisoner_id: crime.prisoner_id.toString(),
+                              article: crime.article,
+                              description: crime.description || '',
+                              crime_date: crime.crime_date,
+                              sentence_years: crime.sentence_years,
+                              sentence_months: crime.sentence_months,
+                              type: crime.type,
+                              severity: crime.severity,
+                              is_recidivist: prisoners.find(p => p.id === crime.prisoner_id)?.is_recidivist === 1
+                            });
+                            setIsModalOpen(true);
                           }}
                           className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
                           title="Editar"
@@ -750,6 +767,7 @@ export default function Crimes() {
               exit={{ opacity: 0 }}
               onClick={() => {
                 setIsModalOpen(false);
+                setEditingCrime(null);
                 setSelectedCommonCrime('');
               }}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
@@ -761,9 +779,10 @@ export default function Crimes() {
               className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden"
             >
               <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                <h3 className="text-xl font-bold text-slate-900">Registrar Novo Crime</h3>
+                <h3 className="text-xl font-bold text-slate-900">{editingCrime ? 'Editar Crime' : 'Registrar Novo Crime'}</h3>
                 <button onClick={() => {
                   setIsModalOpen(false);
+                  setEditingCrime(null);
                   setSelectedCommonCrime('');
                 }} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
                   <X className="w-6 h-6 text-slate-500" />
@@ -905,6 +924,7 @@ export default function Crimes() {
                     type="button"
                     onClick={() => {
                       setIsModalOpen(false);
+                      setEditingCrime(null);
                       setSelectedCommonCrime('');
                     }}
                     className="px-6 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-all"
@@ -915,7 +935,7 @@ export default function Crimes() {
                     type="submit"
                     className="px-8 py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all"
                   >
-                    Salvar Registro
+                    {editingCrime ? 'Salvar Alterações' : 'Salvar Registro'}
                   </button>
                 </div>
               </form>

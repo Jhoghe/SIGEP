@@ -13,7 +13,6 @@ import {
   Truck,
   Filter,
   Eye,
-  Edit2,
   CheckCircle2,
   ChevronRight,
   ArrowRight
@@ -329,9 +328,6 @@ export default function Transfers() {
                           title="Ver detalhes"
                         >
                           <Eye className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="Editar">
-                          <Edit2 className="w-4 h-4" />
                         </button>
                         <button 
                           onClick={() => handleDelete(t.id)}

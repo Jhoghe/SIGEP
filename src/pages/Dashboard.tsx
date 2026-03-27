@@ -77,20 +77,6 @@ export default function Dashboard() {
               <p className="text-slate-500">Gestão Penitenciária em tempo real.</p>
             </div>
           </div>
-          <button 
-            onClick={async () => {
-              try {
-                const res = await apiFetch('/api/public/test');
-                const data = await res.json();
-                alert('Public API Success: ' + JSON.stringify(data));
-              } catch (err: any) {
-                alert('Public API Error: ' + err.message);
-              }
-            }}
-            className="px-3 py-1 bg-slate-200 text-slate-700 rounded text-xs hover:bg-slate-300 transition-colors"
-          >
-            Debug API
-          </button>
         </div>
       </div>
 
